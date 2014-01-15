@@ -1,9 +1,11 @@
-﻿import os, SocketServer
+﻿import mimetypes
+import os
+import SocketServer
 from time import gmtime, strftime
 
 # coding: utf-8
 
-# Copyright 2013 Abram Hindle, Eddie Antonio Santos
+# Copyright 2013 Abram Hindle, Eddie Antonio Santos, Aaron Yong
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,6 +40,8 @@ class MyWebServer(SocketServer.BaseRequestHandler):
         self.content_type = "Content-Type: "
         self.content_length = "Content-Length: "
 
+        self.www_path = os.path.join(os.getcwd(), "www")
+
         self.data = self.request.recv(1024).strip()
 
         request_lines = self.data.splitlines()
@@ -50,8 +54,9 @@ class MyWebServer(SocketServer.BaseRequestHandler):
             + "</body></html>\n"
         elif first_line_data[1].endswith("/"):
             self.content_type += "text/html\n"
-            requested_file_path = os.path.join(os.getcwd(), "www" +
-                first_line_data[1], "index.html")
+            requested_file_path = os.path.normpath(os.path.join(self.www_path +
+                                                   first_line_data[1],
+                                                   "index.html"))
             if os.path.isfile(requested_file_path):
                 self.status_line = "HTTP/1.1 200 OK\n"
                 file = open(requested_file_path)
@@ -63,10 +68,13 @@ class MyWebServer(SocketServer.BaseRequestHandler):
                 self.message_body = "<html><body>HTTP/1.1 404 NOT FOUND"
                 "</body></html>\n"
         else:
-            self.content_type = "text/html\n"
-            requested_file_path = os.path.join(os.getcwd(), "www" +
-                first_line_data[1])
-            if os.path.isfile(requested_file_path):
+            self.content_type += str(mimetypes.guess_type(first_line_data[1],
+                strict=True)[0]) + "\n"
+            requested_file_path = os.path.normpath(os.path.join(self.www_path +
+                                                   first_line_data[1]))
+            print requested_file_path + "\n"
+            if os.path.isfile(requested_file_path) \
+                and requested_file_path.startswith(self.www_path):
                 self.status_line = "HTTP/1.1 200 OK\n"
                 file = open(requested_file_path)
 
@@ -78,9 +86,9 @@ class MyWebServer(SocketServer.BaseRequestHandler):
                 "</body></html>\n"
 
         """Calculate the content length of the message body"""
-        self.content_length = self.content_length + str(len(self.message_body)) + "\n"
+        self.content_length = self.content_length + \
+            str(len(self.message_body)) + "\n"
 
-        print ("Got a request of: %s\n" % self.data)
         self.request.sendall(self.status_line + self.get_datetime() +
             self.content_type + self.content_length + "\n" + self.message_body
             + "\n")
