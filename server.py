@@ -65,7 +65,7 @@ class MyWebServer(SocketServer.BaseRequestHandler):
                 self.message_body = file.read()
             else:
                 self.status_line += "404 NOT FOUND\n"
-                self.content_type = "Content-Type: text/html\n"
+                self.content_type += "text/html\n"
                 self.message_body = "<html><body>HTTP/1.1 404 NOT FOUND" \
                                     "</body></html>\n"
         else:
@@ -82,7 +82,7 @@ class MyWebServer(SocketServer.BaseRequestHandler):
                 self.message_body = file.read()
             else:
                 self.status_line += "404 NOT FOUND\n"
-                self.content_type = "Content-Type: text/html\n"
+                self.content_type += "text/html\n"
                 self.message_body = "<html><body>HTTP/1.1 404 NOT FOUND" \
                                     "</body></html>\n"
 
