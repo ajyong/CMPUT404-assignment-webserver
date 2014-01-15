@@ -34,12 +34,13 @@ from time import gmtime, strftime
 class MyWebServer(SocketServer.BaseRequestHandler):
 
     def handle(self):
-        self.full_response = ""
         self.message_body = ""
-        self.status_line = ""
+        self.status_line = "HTTP/1.1 "
         self.content_type = "Content-Type: "
         self.content_length = "Content-Length: "
 
+        # Check against this path to ensure we only serve files within the
+        # www folder.
         self.www_path = os.path.join(os.getcwd(), "www")
 
         self.data = self.request.recv(1024).strip()
@@ -48,50 +49,50 @@ class MyWebServer(SocketServer.BaseRequestHandler):
         first_line_data = request_lines[0].split()
 
         if first_line_data[0] != "GET":
-            self.status_line = "HTTP/1.1 501 NOT IMPLEMENTED\n"
+            self.status_line += "501 NOT IMPLEMENTED\n"
             self.content_type += "text/html\n"
-            self.message_body = "<html><body>HTTP/1.1 501 NOT IMPLEMENTED"
-            + "</body></html>\n"
+            self.message_body = "<html><body>HTTP/1.1 501 NOT IMPLEMENTED" \
+                                "</body></html>\n"
         elif first_line_data[1].endswith("/"):
             self.content_type += "text/html\n"
             requested_file_path = os.path.normpath(os.path.join(self.www_path +
                                                    first_line_data[1],
                                                    "index.html"))
             if os.path.isfile(requested_file_path):
-                self.status_line = "HTTP/1.1 200 OK\n"
+                self.status_line += "200 OK\n"
                 file = open(requested_file_path)
 
                 self.message_body = file.read()
             else:
-                self.status_line = "HTTP/1.1 404 NOT FOUND\n"
+                self.status_line += "404 NOT FOUND\n"
                 self.content_type = "Content-Type: text/html\n"
-                self.message_body = "<html><body>HTTP/1.1 404 NOT FOUND"
-                "</body></html>\n"
+                self.message_body = "<html><body>HTTP/1.1 404 NOT FOUND" \
+                                    "</body></html>\n"
         else:
             self.content_type += str(mimetypes.guess_type(first_line_data[1],
-                strict=True)[0]) + "\n"
+                                     strict=True)[0]) + "\n"
             requested_file_path = os.path.normpath(os.path.join(self.www_path +
                                                    first_line_data[1]))
-            print requested_file_path + "\n"
-            if os.path.isfile(requested_file_path) \
-                and requested_file_path.startswith(self.www_path):
-                self.status_line = "HTTP/1.1 200 OK\n"
+
+            if (os.path.isfile(requested_file_path) and
+                    requested_file_path.startswith(self.www_path)):
+                self.status_line += "200 OK\n"
                 file = open(requested_file_path)
 
                 self.message_body = file.read()
             else:
-                self.status_line = "HTTP/1.1 404 NOT FOUND\n"
+                self.status_line += "404 NOT FOUND\n"
                 self.content_type = "Content-Type: text/html\n"
-                self.message_body = "<html><body>HTTP/1.1 404 NOT FOUND"
-                "</body></html>\n"
+                self.message_body = "<html><body>HTTP/1.1 404 NOT FOUND" \
+                                    "</body></html>\n"
 
-        """Calculate the content length of the message body"""
+        # Calculate the content length of the message body
         self.content_length = self.content_length + \
-            str(len(self.message_body)) + "\n"
+                              str(len(self.message_body)) + "\n"
 
         self.request.sendall(self.status_line + self.get_datetime() +
-            self.content_type + self.content_length + "\n" + self.message_body
-            + "\n")
+                             self.content_type + self.content_length + "\n" + \
+                             self.message_body)
 
     def get_datetime(self):
         return "Date: " + strftime("%a, %d %b %Y %X GMT", gmtime()) + "\n"
