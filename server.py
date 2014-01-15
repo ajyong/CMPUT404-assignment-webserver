@@ -53,26 +53,20 @@ class MyWebServer(SocketServer.BaseRequestHandler):
             self.content_type += "text/html\n"
             self.message_body = "<html><body>HTTP/1.1 501 NOT IMPLEMENTED" \
                                 "</body></html>\n"
-        elif first_line_data[1].endswith("/"):
-            self.content_type += "text/html\n"
-            requested_file_path = os.path.normpath(os.path.join(self.www_path +
-                                                   first_line_data[1],
-                                                   "index.html"))
-            if os.path.isfile(requested_file_path):
-                self.status_line += "200 OK\n"
-                file = open(requested_file_path)
-
-                self.message_body = file.read()
-            else:
-                self.status_line += "404 NOT FOUND\n"
-                self.content_type += "text/html\n"
-                self.message_body = "<html><body>HTTP/1.1 404 NOT FOUND" \
-                                    "</body></html>\n"
         else:
-            self.content_type += str(mimetypes.guess_type(first_line_data[1],
-                                     strict=True)[0]) + "\n"
-            requested_file_path = os.path.normpath(os.path.join(self.www_path +
-                                                   first_line_data[1]))
+            if first_line_data[1].endswith("/"):
+                self.content_type += "text/html\n"
+                requested_file_path = os.path.normpath(
+                                        os.path.join(self.www_path +
+                                                     first_line_data[1],
+                                                     "index.html"))
+            else:
+                self.content_type += str(mimetypes.guess_type(
+                                            first_line_data[1],
+                                            strict=True)[0]) + "\n"
+                requested_file_path = os.path.normpath(
+                                        os.path.join(self.www_path +
+                                                     first_line_data[1]))
 
             if (os.path.isfile(requested_file_path) and
                     requested_file_path.startswith(self.www_path)):
