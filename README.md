@@ -7,10 +7,13 @@ See requirements.org (plain-text) for a description of the project.
 
 Make a simple webserver.
 
+NOTE: Firefox screenshots are included under the screenshots/ folder.
+
 Contributors / Licensing
 ========================
 
-Generally everything is LICENSE'D under the Apache 2 license by Abram Hindle.
+Generally everything is LICENSE'D under the Apache 2 license by Abram Hindle
+and Aaron Yong.
 
 server.py contains contributions from:
 
