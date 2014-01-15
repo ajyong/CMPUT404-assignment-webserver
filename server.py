@@ -1,5 +1,6 @@
 ﻿import SocketServer
 from time import gmtime, strftime
+from os import path
 
 # coding: utf-8
 
@@ -30,32 +31,47 @@ from time import gmtime, strftime
 
 
 class MyWebServer(SocketServer.BaseRequestHandler):
-    
+
     def handle(self):
-        full_response = ""
-        message_body = ""
-        status_line = "HTTP/1.1 200 OK\n"
-        date = "Date: " + strftime("%a, %d %b %Y %X GMT", gmtime()) + "\n"
-        content_type = "Content-Type: text/plain\n"
-        content_length = "Content-Length: "
+        self.full_response = ""
+        self.message_body = ""
+        self.status_line = ""
+        self.content_type = ""
+        self.content_length = "Content-Length: "
+
         self.data = self.request.recv(1024).strip()
+
         request_lines = self.data.splitlines()
-        message_body = request_lines[0]
         first_line_data = request_lines[0].split()
+
         if first_line_data[0] != "GET":
-            status_line = "HTTP/1.1 501 NOT IMPLEMENTED\n"
-            message_body = "HTTP/1.1 501 NOT IMPLEMENTED"
-        content_length += str(len(message_body)) + "\n"
+            self.status_line = "HTTP/1.1 501 NOT IMPLEMENTED\n"
+            self.content_type = "Content-Type: text/html\n"
+            self.message_body = "<html><body>HTTP/1.1 501 NOT IMPLEMENTED"
+                "</body></html>\n"
+        elif first_line_data[1].endswith("/"):
+            requested_file_path = os.getcwd() + first_line_data[1] + "/index.html"
+            if os.path.isfile(requested_file_path):
+                self.status_line = "HTTP/1.1 200 OK\n"
+                file = open(requested_file_path)
+
+                self.message_body = file.read()
+                self.content_length = getsize(requested_file_path)
+            else:
+                self.status_line = "HTTP/1.1 404 NOT FOUND\n"
+        else:
+            self.status_line = "HTTP/1.1 200 OK\n"
+            self.message_body = self.data
+
+        self.content_length += str(len(self.message_body)) + "\n"
         print ("Got a request of: %s\n" % self.data)
         #self.request.sendall(self.data.upper())
-        self.request.sendall(status_line + date + content_type + content_length
-            + "\n" + message_body + "\n")
+        self.request.sendall(self.status_line + self.get_datetime() +
+            self.content_type + self.content_length + "\n" + self.message_body
+            + "\n")
 
-    def __get_datetime(self):
+    def get_datetime(self):
         return "Date: " + strftime("%a, %d %b %Y %X GMT", gmtime()) + "\n"
-
-    def respond_not_implemented(self):
-        
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
