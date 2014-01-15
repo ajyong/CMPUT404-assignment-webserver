@@ -1,6 +1,5 @@
-﻿import SocketServer
+﻿import os, SocketServer
 from time import gmtime, strftime
-from os import path
 
 # coding: utf-8
 
@@ -36,7 +35,7 @@ class MyWebServer(SocketServer.BaseRequestHandler):
         self.full_response = ""
         self.message_body = ""
         self.status_line = ""
-        self.content_type = ""
+        self.content_type = "Content-Type: "
         self.content_length = "Content-Length: "
 
         self.data = self.request.recv(1024).strip()
@@ -46,26 +45,42 @@ class MyWebServer(SocketServer.BaseRequestHandler):
 
         if first_line_data[0] != "GET":
             self.status_line = "HTTP/1.1 501 NOT IMPLEMENTED\n"
-            self.content_type = "Content-Type: text/html\n"
+            self.content_type += "text/html\n"
             self.message_body = "<html><body>HTTP/1.1 501 NOT IMPLEMENTED"
-                "</body></html>\n"
+            + "</body></html>\n"
         elif first_line_data[1].endswith("/"):
-            requested_file_path = os.getcwd() + first_line_data[1] + "/index.html"
+            self.content_type += "text/html\n"
+            requested_file_path = os.path.join(os.getcwd(), "www" +
+                first_line_data[1], "index.html")
             if os.path.isfile(requested_file_path):
                 self.status_line = "HTTP/1.1 200 OK\n"
                 file = open(requested_file_path)
 
                 self.message_body = file.read()
-                self.content_length = getsize(requested_file_path)
             else:
                 self.status_line = "HTTP/1.1 404 NOT FOUND\n"
+                self.content_type = "Content-Type: text/html\n"
+                self.message_body = "<html><body>HTTP/1.1 404 NOT FOUND"
+                "</body></html>\n"
         else:
-            self.status_line = "HTTP/1.1 200 OK\n"
-            self.message_body = self.data
+            self.content_type = "text/html\n"
+            requested_file_path = os.path.join(os.getcwd(), "www" +
+                first_line_data[1])
+            if os.path.isfile(requested_file_path):
+                self.status_line = "HTTP/1.1 200 OK\n"
+                file = open(requested_file_path)
 
-        self.content_length += str(len(self.message_body)) + "\n"
+                self.message_body = file.read()
+            else:
+                self.status_line = "HTTP/1.1 404 NOT FOUND\n"
+                self.content_type = "Content-Type: text/html\n"
+                self.message_body = "<html><body>HTTP/1.1 404 NOT FOUND"
+                "</body></html>\n"
+
+        """Calculate the content length of the message body"""
+        self.content_length = self.content_length + str(len(self.message_body)) + "\n"
+
         print ("Got a request of: %s\n" % self.data)
-        #self.request.sendall(self.data.upper())
         self.request.sendall(self.status_line + self.get_datetime() +
             self.content_type + self.content_length + "\n" + self.message_body
             + "\n")
