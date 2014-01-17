@@ -33,7 +33,17 @@ from time import gmtime, strftime
 
 class MyWebServer(SocketServer.BaseRequestHandler):
     def get_datetime(self):
-        return "Date: " + strftime("%a, %d %b %Y %X GMT", gmtime()) + "\n"
+        return "Date: " + strftime("%a, %d %b %Y %X GMT", gmtime()) + "\r\n"
+
+    def get_request_first_line(self, data):
+        if data == None:
+            return
+
+        request_lines = data.splitlines()
+        if request_lines == None:
+            return
+
+        return request_lines[0].split()
 
     def handle(self):
         self.content_length = "Content-Length: "
@@ -47,14 +57,13 @@ class MyWebServer(SocketServer.BaseRequestHandler):
         self.www_path = os.path.join(os.getcwd(), "www")
 
         self.data = self.request.recv(1024).strip()
-        request_lines = self.data.splitlines()
-        first_line_data = request_lines[0].split()
+        first_line_data = self.get_request_first_line(self.data)
 
         if first_line_data[0] != "GET":
-            self.status_line += "501 Not Implemented\n"
-            self.content_type += "text/html\n"
+            self.status_line += "501 Not Implemented\r\n"
+            self.content_type += "text/html\r\n"
             self.message_body = "<html><body><h1>501 NOT IMPLEMENTED" \
-                                "</h1></body></html>\n"
+                                "</h1></body></html>\r\n"
         else:
             requested_path = os.path.normpath(os.path.join(self.www_path +
                                               first_line_data[1]))
@@ -71,13 +80,13 @@ class MyWebServer(SocketServer.BaseRequestHandler):
 
                  # Set the mimetypes depending on the request
                 if requested_path.endswith(".html"):
-                    self.content_type += "text/html\n"
+                    self.content_type += "text/html\r\n"
                 elif requested_path.endswith(".css"):
-                    self.content_type += "text/css\n"
+                    self.content_type += "text/css\r\n"
                 else:
-                    self.content_type += "text/plain\n"
+                    self.content_type += "text/plain\r\n"
 
-                self.status_line += "200 OK\n"
+                self.status_line += "200 OK\r\n"
 
                 file = open(requested_path)
                 self.message_body = file.read()
@@ -88,24 +97,24 @@ class MyWebServer(SocketServer.BaseRequestHandler):
             # original request URL.
             elif (os.path.isdir(requested_path) and
                     requested_path.startswith(self.www_path)):
-                self.status_line += "301 Moved Permanently\n"
-                self.content_type += "text/html\n"
-                self.location = "Location: " + first_line_data[1] + "/\n"
+                self.status_line += "301 Moved Permanently\r\n"
+                self.content_type += "text/html\r\n"
+                self.location = "Location: " + first_line_data[1] + "/\r\n"
                 self.message_body = "<html><body><h1>310 MOVED PERMANENTLY" \
                                     "</h1><a href=\"" + first_line_data[1] + \
                                     "/" + "\">Click to get redirected</a>" \
-                                    "</body></html>\n"
+                                    "</body></html>\r\n"
 
             # Otherwise, construct a 404 not found response.
             else:
-                self.status_line += "404 Not Found\n"
-                self.content_type += "text/html\n"
+                self.status_line += "404 Not Found\r\n"
+                self.content_type += "text/html\r\n"
                 self.message_body = "<html><body><h1>404 NOT FOUND" \
-                                    "</h1></body></html>\n"
+                                    "</h1></body></html>\r\n"
 
         # Calculate the content length of the message body
         self.content_length = self.content_length + \
-                              str(len(self.message_body)) + "\n\n"
+                              str(len(self.message_body)) + "\r\n\r\n"
 
         # Send out the response
         self.request.sendall(self.status_line + self.get_datetime() +
